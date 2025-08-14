@@ -1,12 +1,13 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
+from utils import *
 
 def main():
     # Формирање графа за анализу
     file_path = "graphs/soc-sign-bitcoinotc.csv"
     G = MakeGraph(file_path, input_range = (-10, 10), output_range = (0, 1))
-    fig, ax = plt.subplots(nrows=2, ncols=3)
+    _, ax = plt.subplots(nrows=2, ncols=3)
 
     # Основне карактеристике мреже
     print("\n--- Основне карактеристике ---")
@@ -73,18 +74,6 @@ def main():
     plt.show()
 
     return
-
-def MakeGraph(file_path : str, input_range : tuple[int, int] = None, output_range : tuple[int, int] = None) -> nx.Graph:
-    extension = file_path.split('.')[-1]
-    if extension == 'txt': return nx.read_edgelist(file_path, nodetype=int, create_using=nx.Graph())
-    elif extension == 'csv':
-        G = nx.Graph()
-        with open(file_path) as file:
-            for line in file:
-                args = line.split(',')
-                weight = (float(args[2]) - input_range[0]) * (output_range[1] - output_range[0]) / (input_range[1] - input_range[0]) + output_range[0]
-                G.add_edge(args[0], args[1], weight = weight)
-        return G
 
 if __name__ == '__main__':
     main()
