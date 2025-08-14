@@ -4,9 +4,9 @@ import numpy as np
 
 def main():
     # Формирање графа за анализу
-    file_path = "graphs/facebook_combined.txt"
-    G = nx.read_edgelist(file_path, nodetype=int, create_using=nx.Graph())
-
+    file_path = "graphs/soc-sign-bitcoinotc.csv"
+    G = MakeGraph(file_path, input_range = (-10, 10), output_range = (0, 1))
+    fig, ax = plt.subplots(nrows=2, ncols=3)
 
     # Основне карактеристике мреже
     print("\n--- Основне карактеристике ---")
@@ -25,15 +25,15 @@ def main():
     avg_node_degree = sum(dict(G.degree()).values()) / G.number_of_nodes()
     print(f"Просечан степен: {avg_node_degree:.2f}")
     degree_counts = dict(G.degree()).values()
-    plt.hist(degree_counts, bins=1000)
-    plt.show()
+    ax[0, 0].set_title("Дистрибуција степена")
+    ax[0, 0].hist(degree_counts, bins=1000)
 
-    ## Просечан коефицијент класеровања и дистрибуција коефицијента кластеровања
+    ## Просечан коефицијент класеровања и дистрибуција коефицијента кластеризације
     avg_clustering_coefficient = nx.average_clustering(G)
     print(f"Просечан коефицијент кластеризације: {avg_clustering_coefficient:.4f}")
     clustering_counts = list(nx.clustering(G).values())
-    plt.hist(clustering_counts, bins=1000)
-    plt.show()
+    ax[0, 1].set_title("Дистрибуција коефицијената кластеризације")
+    ax[0, 1].hist(clustering_counts, bins=1000)
 
     ## Коефицијент асортативности степенова - колика је зависност чворова истог степена да буду повезани [-1, 1]
     assortativity_coefficient = nx.degree_assortativity_coefficient(G)
@@ -46,28 +46,45 @@ def main():
     ## Централност степена - колико процената чворова су њему суседи
     degree_centrality = nx.degree_centrality(G)
     degree_centrality_counts = list(degree_centrality.values())
-    plt.hist(degree_centrality_counts, bins=1000)
-    plt.show()
+    ax[1, 0].set_title("Дистрибуција централности степена")
+    ax[1, 0].hist(degree_centrality_counts, bins=1000)
 
     ## Централност блискости
     closeness_centrality = nx.closeness_centrality(G)
     closeness_centrality_counts = list(closeness_centrality.values())
-    plt.hist(closeness_centrality_counts, bins=1000)
-    plt.show()
+    ax[1, 1].set_title("Дистрибуција централности блискости")
+    ax[1, 1].hist(closeness_centrality_counts, bins=1000)
 
-    ## Централност посредништва (може бити спора за велике графове, размислите о k параметру за апроксимацију)
+    ## Централност посредништва
     betweenness_centrality = nx.betweenness_centrality(G, k=1000) # k=1000 за апроксимацију
     betweenness_centrality_counts = list(betweenness_centrality.values())
-    plt.hist(betweenness_centrality_counts, bins=1000)
-    plt.show()
+    ax[1, 2].set_title("Дистрибуција централности посредништва")
+    ax[1, 2].hist(betweenness_centrality_counts, bins=1000)
 
     ## Асиметрија централности
     asymmetry_degree = np.std(degree_centrality_counts) / np.mean(degree_centrality_counts)
     print(f"Асиметрија централности степена (коефицијент варијације): {asymmetry_degree:.4f}")
 
+    # Приказ графика
+    plt.show()
+
     # Визуелизација
     nx.draw(G, with_labels=True, node_color='skyblue', node_size=500, edge_color='gray')
     plt.show()
+
+    return
+
+def MakeGraph(file_path : str, input_range : tuple[int, int] = None, output_range : tuple[int, int] = None) -> nx.Graph:
+    extension = file_path.split('.')[-1]
+    if extension == 'txt': return nx.read_edgelist(file_path, nodetype=int, create_using=nx.Graph())
+    elif extension == 'csv':
+        G = nx.Graph()
+        with open(file_path) as file:
+            for line in file:
+                args = line.split(',')
+                weight = (float(args[2]) - input_range[0]) * (output_range[1] - output_range[0]) / (input_range[1] - input_range[0]) + output_range[0]
+                G.add_edge(args[0], args[1], weight = weight)
+        return G
 
 if __name__ == '__main__':
     main()
