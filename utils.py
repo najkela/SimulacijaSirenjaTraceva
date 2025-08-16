@@ -45,14 +45,15 @@ def RunSingleSimulation(
         people_dict[person_id].known_gossips[gossip.id] = gossip.person_gossiped_about_id
 
     # Чување параметара ширења кроз време
-    infected_count_over_time = [0]
+    infected_count_over_time = [num_initial_infected]
 
     # Рачунање могућег обима ширења
-    people_can_know_gossip = [new_id for person_id in acquaintances_of_gossip_target for new_id in list(G.neighbors(person_id))]
+    people_can_know_gossip = acquaintances_of_gossip_target.copy()
+    people_can_know_gossip += [new_id for person_id in acquaintances_of_gossip_target for new_id in list(G.neighbors(person_id))]
     people_can_know_gossip = list(set(people_can_know_gossip))
     people_can_know_gossip.remove(gossip.person_gossiped_about_id)
     max_infected_count = len(people_can_know_gossip)
-    
+
     # Симулација
     for day in range(simulation_days):
         # Провера да ли постоји још неко ко може да сазна трач

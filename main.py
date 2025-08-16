@@ -60,7 +60,7 @@ def main():
     time_to_50_percent = -1
     for day, count in enumerate(average_infected_percentage):
         if time_to_50_percent == -1 and count >= 50:
-            time_to_50_percent = day + 1
+            time_to_50_percent = day
     if time_to_50_percent != -1:
         print(f"Просечно време док трач не дође до 50% могућих људи: {time_to_50_percent} дана.")
     else:
@@ -70,7 +70,7 @@ def main():
     time_to_90_percent = -1
     for day, count in enumerate(average_infected_percentage):
         if time_to_90_percent == -1 and count >= 90:
-            time_to_90_percent = day + 1
+            time_to_90_percent = day
     if time_to_90_percent != -1:
         print(f"Просечно време док трач не дође до 90% могућих људи: {time_to_90_percent} дана.")
     else:
