@@ -34,10 +34,9 @@ def RunSingleSimulation(
         person.state = 'Susceptible'
         person.known_gossips = {}
 
-    # Постављање почетно заражене особе
+    # Бирање и постављање почетно заражене особе
     acquaintances_of_gossip_target = list(G.neighbors(gossip.person_gossiped_about_id))
     num_initial_infected = 1
-    
     initial_infected_ids = random.sample(acquaintances_of_gossip_target, num_initial_infected)
 
     for person_id in initial_infected_ids:
@@ -47,7 +46,7 @@ def RunSingleSimulation(
     # Чување параметара ширења кроз време
     infected_count_over_time = [num_initial_infected]
 
-    # Рачунање могућег обима ширења
+    # Рачунање популације која може да сазна трач и њихово пребројавање
     people_can_know_gossip = acquaintances_of_gossip_target.copy()
     people_can_know_gossip += [new_id for person_id in acquaintances_of_gossip_target for new_id in list(G.neighbors(person_id))]
     people_can_know_gossip = list(set(people_can_know_gossip))
@@ -65,13 +64,14 @@ def RunSingleSimulation(
         newly_infected_ids = []
 
         for person_id, current_person in people_dict.items():
+            # Могуће ширење заразе ако је тренутна особа заражена
             if current_person.state == 'Infected':
+                # Особе које могу бити заражене
                 neighbors = list(G.neighbors(person_id))
-                
                 for neighbor_id in neighbors:
                     neighbor_person = people_dict[neighbor_id]
-                    
-                    if neighbor_person.state == 'Susceptible' and random.random() < transmission_probability and neighbor_id in people_can_know_gossip:
+                    # Да ли ће се тренутна особа заразити
+                    if neighbor_person.state == 'Susceptible' and random.random() < ChanceForInfection_0(transmission_probability, neighbor_id, people_can_know_gossip):
                         newly_infected_ids.append(neighbor_id)
                         neighbor_person.known_gossips[gossip.id] = gossip.person_gossiped_about_id
         
@@ -82,3 +82,5 @@ def RunSingleSimulation(
         infected_count_over_time.append(current_infected_count)
     
     return max_infected_count, infected_count_over_time
+
+def ChanceForInfection_0(transmission_probability, neighbor_id, people_can_know_gossip): return transmission_probability if neighbor_id in people_can_know_gossip else 0

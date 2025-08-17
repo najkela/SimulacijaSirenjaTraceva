@@ -29,7 +29,6 @@ def main():
 
     # Листа за чување резултата свих итерација
     all_infected_counts = []
-    all_max_infected_count = []
     
     # Покретање симулација
     print(f"Покретање {num_iterations} симулација...")
@@ -38,7 +37,6 @@ def main():
             G, people_dict, transmission_probability, simulation_days, main_gossip
         )
         all_infected_counts.append(infected_count_over_time)
-        all_max_infected_count.append(max_infected_count)
         print(f"Симулација {i+1}/{num_iterations} завршена.")
 
     # Израчунавање просека резултата
@@ -48,13 +46,17 @@ def main():
     # Испис метрика на крају симулације (са просечним вредностима)
     print("\n--- Просечни резултати из свих симулација ---")
 
-    ## укупан обим заразе
-    total_infected_percentage = (average_infected_counts[-1] / num_people) * 100
-    print(f"\nУкупни обим целе популације ширења (просек): {total_infected_percentage:.2f}% популације је сазнало трач.")
+    ## максимални обим ширења
+    max_infected_percentage = (max_infected_count / num_people) * 100
+    print(f"Проценат популације који може да сазна трач: {max_infected_percentage:.2f}% популације може да сазна трач")
 
-    ## укупан проценат до максималног обима ширења
+    ## остварени обим ширења у целој популацији
+    total_infected_percentage = (average_infected_counts[-1] / num_people) * 100
+    print(f"Просек ширења трача у целој популацији: {total_infected_percentage:.2f}% популације је сазнало трач.")
+
+    ## остварени обим ширења у популацији која може да сазна
     total_possible_infected_percentage = average_infected_percentage[-1]
-    print(f"Укупни обим максималног обима ширења (просек): {total_possible_infected_percentage:.2f}% популације је сазнало трач.")
+    print(f"Просек ширења трача у популацији која може да сазна: {total_possible_infected_percentage:.2f}% популације је сазнало трач.")
 
     ## време до 50% максималног обима заразе 
     time_to_50_percent = -1
