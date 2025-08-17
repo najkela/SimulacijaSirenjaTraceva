@@ -71,7 +71,7 @@ def RunSingleSimulation(
                 for neighbor_id in neighbors:
                     neighbor_person = people_dict[neighbor_id]
                     # Да ли ће се тренутна особа заразити
-                    if neighbor_person.state == 'Susceptible' and random.random() < ChanceForInfection_0(transmission_probability, neighbor_id, people_can_know_gossip):
+                    if random.random() < ChanceForInfection_1(transmission_probability, current_person, neighbor_person, people_can_know_gossip, G):
                         newly_infected_ids.append(neighbor_id)
                         neighbor_person.known_gossips[gossip.id] = gossip.person_gossiped_about_id
         
@@ -83,4 +83,17 @@ def RunSingleSimulation(
     
     return max_infected_count, infected_count_over_time
 
-def ChanceForInfection_0(transmission_probability, neighbor_id, people_can_know_gossip): return transmission_probability if neighbor_id in people_can_know_gossip else 0
+def ChanceForInfection_0(transmission_probability, neighbor_person, people_can_know_gossip): 
+    return transmission_probability if neighbor_person.id in people_can_know_gossip and neighbor_person.state == 'Susceptible' else 0
+
+def ChanceForInfection_1(transmission_probability, current_person, neighbor_person, people_can_know_gossip, G):
+    if not ChanceForInfection_0(transmission_probability, neighbor_person, people_can_know_gossip):
+        return 0
+    
+    weight = G.edges[current_person.id, neighbor_person.id]['weight']
+    if weight > 1: print(weight)
+
+    # Константе за утицај коефицијената на шансу преноса
+    a, b = .9, .1   # збир мора да буде 1
+
+    return a * transmission_probability + b * weight

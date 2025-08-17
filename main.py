@@ -4,6 +4,7 @@ import random
 import numpy as np
 from classes import Person, Gossip
 from utils import *
+from tqdm import tqdm
 
 def main():
     # Параметри за симулацију
@@ -32,12 +33,11 @@ def main():
     
     # Покретање симулација
     print(f"Покретање {num_iterations} симулација...")
-    for i in range(num_iterations):
+    for i in tqdm(range(num_iterations)):
         max_infected_count, infected_count_over_time = RunSingleSimulation(
             G, people_dict, transmission_probability, simulation_days, main_gossip
         )
         all_infected_counts.append(infected_count_over_time)
-        print(f"Симулација {i+1}/{num_iterations} завршена.")
 
     # Израчунавање просека резултата
     average_infected_counts = np.mean(all_infected_counts, axis = 0)
