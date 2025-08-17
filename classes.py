@@ -5,6 +5,7 @@ class Person:
         self.known_gossips = {}
 
 class Gossip:
-    def __init__(self, gossip_id, person_gossiped_about_id):
+    def __init__(self, gossip_id, person_gossiped_about_id, juicy):
         self.id = gossip_id
         self.person_gossiped_about_id = person_gossiped_about_id
+        self.juicy = juicy

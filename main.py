@@ -25,7 +25,8 @@ def main():
     # Прављење трача
     gossip_id_counter = 0
     person_gossiped_about_id = random.choice(list(people_dict.keys()))
-    main_gossip = Gossip(gossip_id_counter, person_gossiped_about_id)
+    gossip_juicy = random.random()
+    main_gossip = Gossip(gossip_id_counter, person_gossiped_about_id, gossip_juicy)
     gossip_id_counter += 1
 
     # Листа за чување резултата свих итерација
