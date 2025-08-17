@@ -71,7 +71,7 @@ def RunSingleSimulation(
                 for neighbor_id in neighbors:
                     neighbor_person = people_dict[neighbor_id]
                     # Да ли ће се тренутна особа заразити
-                    if random.random() < ChanceForInfection_1(transmission_probability, current_person, neighbor_person, people_can_know_gossip, G):
+                    if random.random() < ChanceForInfection_1(transmission_probability, current_person, neighbor_person, gossip.person_gossiped_about_id, people_can_know_gossip, G):
                         newly_infected_ids.append(neighbor_id)
                         neighbor_person.known_gossips[gossip.id] = gossip.person_gossiped_about_id
         
@@ -86,14 +86,17 @@ def RunSingleSimulation(
 def ChanceForInfection_0(transmission_probability, neighbor_person, people_can_know_gossip): 
     return transmission_probability if neighbor_person.id in people_can_know_gossip and neighbor_person.state == 'Susceptible' else 0
 
-def ChanceForInfection_1(transmission_probability, current_person, neighbor_person, people_can_know_gossip, G):
+def ChanceForInfection_1(transmission_probability, current_person, neighbor_person, gossip_target_person, people_can_know_gossip, G):
     if not ChanceForInfection_0(transmission_probability, neighbor_person, people_can_know_gossip):
         return 0
     
     weight = G.edges[current_person.id, neighbor_person.id]['weight']
-    if weight > 1: print(weight)
+    try:
+        friendship = G.edges[current_person.id, gossip_target_person]['weight']
+    except:
+        friendship = 0
 
     # Константе за утицај коефицијената на шансу преноса
-    a, b = .9, .1   # збир мора да буде 1
+    c_transission, c_weight = .9, .1    # збир мора да буде 1
 
-    return a * transmission_probability + b * weight
+    return c_transission * transmission_probability + c_weight * (weight - friendship)
