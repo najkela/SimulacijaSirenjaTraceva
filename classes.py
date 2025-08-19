@@ -7,6 +7,7 @@ class Person:
         self.gossip_stoppage_constant = gossip_stoppage_constant
         self.gossips_stopped = []
         self.speed_of_spread = speed_of_spread
+        self.gossips_heard = {}
 
 class Gossip:
     def __init__(self, gossip_id, person_gossiped_about_id, juicy, stoppable):

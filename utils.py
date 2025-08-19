@@ -71,9 +71,12 @@ def RunSingleSimulation(
                 for neighbor_id in neighbors:
                     neighbor_person = people_dict[neighbor_id]
                     # Да ли ће се тренутна особа заразити
-                    if random.random() < ChanceForInfection_5(transmission_probability, current_person, neighbor_person, people_can_know_gossip):
+                    if random.random() < ChanceForInfection_6(transmission_probability, neighbor_person, people_can_know_gossip, gossip):
                         newly_infected_ids.append(neighbor_id)
                         neighbor_person.known_gossips[gossip.id] = gossip.person_gossiped_about_id
+
+                    # Број пута колико је особа чула трач се повећава сваки пут кад буде изложена информацији
+                    neighbor_person.gossips_heard[gossip.id] = neighbor_person.gossips_heard.get(gossip.id, 0) + 1
         
         for person_id in newly_infected_ids:
             people_dict[person_id].state = 'Infected'
@@ -145,3 +148,11 @@ def ChanceForInfection_5(transmission_probability, current_person, neighbor_pers
     c_transission, c_person_speed_of_spread = .8, .2
    
     return c_transission * transmission_probability + c_person_speed_of_spread * current_person.speed_of_spread
+
+def ChanceForInfection_6(transmission_probability, neighbor_person, people_can_know_gossip, gossip):
+    if not ChanceForInfection_0(transmission_probability, neighbor_person, people_can_know_gossip):
+        return 0
+    
+    c_transission, c_number_of_times_heard = .8, .0001
+   
+    return c_transission * transmission_probability +  c_number_of_times_heard * neighbor_person.gossips_heard.get(gossip.id, 0)
