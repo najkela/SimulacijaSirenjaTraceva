@@ -71,7 +71,7 @@ def RunSingleSimulation(
                 for neighbor_id in neighbors:
                     neighbor_person = people_dict[neighbor_id]
                     # Да ли ће се тренутна особа заразити
-                    if random.random() < ChanceForInfection_3(transmission_probability, current_person, neighbor_person, people_can_know_gossip, gossip):
+                    if random.random() < ChanceForInfection_4(transmission_probability, G, current_person, neighbor_person, people_can_know_gossip, gossip):
                         newly_infected_ids.append(neighbor_id)
                         neighbor_person.known_gossips[gossip.id] = gossip.person_gossiped_about_id
         
@@ -118,3 +118,22 @@ def ChanceForInfection_3(transmission_probability, current_person, neighbor_pers
     gossip.juicy = (1 - c_juicy_change) * gossip.juicy + c_juicy_change * juicy_change
 
     return ChanceForInfection_2(transmission_probability, neighbor_person, people_can_know_gossip, gossip)
+
+def ChanceForInfection_4(transmission_probability, G, current_person, neighbor_person, people_can_know_gossip, gossip):
+    if not ChanceForInfection_0(transmission_probability, neighbor_person, people_can_know_gossip):
+        return 0
+    
+    if gossip.id in current_person.gossips_stopped: return 0
+
+    c_gossip_stoppage, c_person_stoppage, c_friendship = .005, .005, .005
+    try:
+        friendship = G.edges[current_person.id, gossip.person_gossiped_about_id]['weight']
+    except:
+        friendship = 0
+ 
+    chance_for_stoppage = c_gossip_stoppage * gossip.stoppable + c_person_stoppage * current_person.gossip_stoppage_constant + c_friendship * friendship
+    if random.random() < chance_for_stoppage:
+        current_person.gossips_stopped.append(gossip.id)
+        return 0
+    
+    return transmission_probability

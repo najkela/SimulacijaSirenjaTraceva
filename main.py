@@ -20,14 +20,16 @@ def main():
     num_people = G.number_of_nodes()
     for i in G.nodes():
         gossip_modifier_constant = random.random() * 2 - 1
-        people.append(Person(i, gossip_modifier_constant))
+        gossip_stoppage_constant = random.random()
+        people.append(Person(i, gossip_modifier_constant, gossip_stoppage_constant))
     people_dict = {person.id: person for person in people}
 
     # Прављење трача
     gossip_id_counter = 0
     person_gossiped_about_id = random.choice(list(people_dict.keys()))
     gossip_juicy = random.random()
-    main_gossip = Gossip(gossip_id_counter, person_gossiped_about_id, gossip_juicy)
+    gossip_stoppable = random.random()
+    main_gossip = Gossip(gossip_id_counter, person_gossiped_about_id, gossip_juicy, gossip_stoppable)
     gossip_id_counter += 1
 
     # Листа за чување резултата свих итерација
