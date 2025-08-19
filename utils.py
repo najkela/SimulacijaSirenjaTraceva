@@ -89,13 +89,13 @@ def RunSingleSimulation(
 def ChanceForInfection_0(transmission_probability, neighbor_person, people_can_know_gossip): 
     return transmission_probability if neighbor_person.id in people_can_know_gossip and neighbor_person.state == 'Susceptible' else 0
 
-def ChanceForInfection_1(transmission_probability, current_person, neighbor_person, gossip_target_person, people_can_know_gossip, G):
+def ChanceForInfection_1(transmission_probability, G, current_person, neighbor_person, people_can_know_gossip, gossip):
     if not ChanceForInfection_0(transmission_probability, neighbor_person, people_can_know_gossip):
         return 0
     
     weight = G.edges[current_person.id, neighbor_person.id]['weight']
     try:
-        friendship = G.edges[current_person.id, gossip_target_person]['weight']
+        friendship = G.edges[current_person.id, gossip.person_gossiped_about_id]['weight']
     except:
         friendship = 0
 
@@ -156,3 +156,49 @@ def ChanceForInfection_6(transmission_probability, neighbor_person, people_can_k
     c_transission, c_number_of_times_heard = .8, .0001
    
     return c_transission * transmission_probability +  c_number_of_times_heard * neighbor_person.gossips_heard.get(gossip.id, 0)
+
+def ChanceForInfection(transmission_probability, G, current_person, neighbor_person, people_can_know_gossip, gossip):
+    # Сегмент 0 - Базни модел
+    if not neighbor_person.id in people_can_know_gossip or neighbor_person.state != 'Susceptible': return 0
+
+    # Сегмент 1 - Зависност од друштвене повезаности
+    weight = G.edges[current_person.id, neighbor_person.id]['weight']
+    try:
+        friendship = G.edges[current_person.id, gossip.person_gossiped_about_id]['weight']
+    except:
+        friendship = 0
+
+    social_connection_factor = weight - friendship
+
+    # Сегмент 2 + Привлачност информација
+    juicy_factor = gossip.juicy
+
+    # Сегмент 3 - Могућност модификације
+    juicy_change = random.random() * current_person.gossip_modifier_constant
+    c_juicy_change = .3
+    gossip.juicy = (1 - c_juicy_change) * gossip.juicy + c_juicy_change * juicy_change
+
+    # Сегмент 4 - Свесна одлука о преносу
+    if gossip.id in current_person.gossips_stopped: return 0
+
+    c_gossip_stoppage, c_person_stoppage, c_friendship = .005, .005, .005
+    chance_for_stoppage = c_gossip_stoppage * gossip.stoppable + c_person_stoppage * current_person.gossip_stoppage_constant + c_friendship * friendship
+    if random.random() < chance_for_stoppage:
+        current_person.gossips_stopped.append(gossip.id)
+        return 0
+
+    # Сегмент 5 - Различита брзина ширења трачева
+    speed_of_spread_factor = current_person.speed_of_spread
+
+    # Сегмент 6 - Вишеструки независни извори
+    number_of_times_heard_factor = neighbor_person.gossip_heard.get(gossip.id)
+
+    # Константе утицаја на пренос трача
+    c_transmission_probability, c_social_connection, c_juicy, c_speed_of_spread, c_number_of_times_heard = .4999, .1, .2, .2, .0001
+
+    total_chance = c_transmission_probability * transmission_probability 
+    total_chance += c_social_connection * social_connection_factor 
+    total_chance += c_juicy * juicy_factor 
+    total_chance += c_speed_of_spread * speed_of_spread_factor 
+    total_chance += c_number_of_times_heard * number_of_times_heard_factor
+    return total_chance
