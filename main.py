@@ -21,7 +21,8 @@ def main():
     for i in G.nodes():
         gossip_modifier_constant = random.random() * 2 - 1
         gossip_stoppage_constant = random.random()
-        people.append(Person(i, gossip_modifier_constant, gossip_stoppage_constant))
+        speed_of_spread = random.random()
+        people.append(Person(i, gossip_modifier_constant, gossip_stoppage_constant, speed_of_spread))
     people_dict = {person.id: person for person in people}
 
     # Прављење трача

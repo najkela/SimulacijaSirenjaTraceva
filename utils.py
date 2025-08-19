@@ -71,7 +71,7 @@ def RunSingleSimulation(
                 for neighbor_id in neighbors:
                     neighbor_person = people_dict[neighbor_id]
                     # Да ли ће се тренутна особа заразити
-                    if random.random() < ChanceForInfection_4(transmission_probability, G, current_person, neighbor_person, people_can_know_gossip, gossip):
+                    if random.random() < ChanceForInfection_5(transmission_probability, current_person, neighbor_person, people_can_know_gossip):
                         newly_infected_ids.append(neighbor_id)
                         neighbor_person.known_gossips[gossip.id] = gossip.person_gossiped_about_id
         
@@ -137,3 +137,11 @@ def ChanceForInfection_4(transmission_probability, G, current_person, neighbor_p
         return 0
     
     return transmission_probability
+
+def ChanceForInfection_5(transmission_probability, current_person, neighbor_person, people_can_know_gossip):
+    if not ChanceForInfection_0(transmission_probability, neighbor_person, people_can_know_gossip):
+        return 0
+    
+    c_transission, c_person_speed_of_spread = .8, .2
+   
+    return c_transission * transmission_probability + c_person_speed_of_spread * current_person.speed_of_spread
