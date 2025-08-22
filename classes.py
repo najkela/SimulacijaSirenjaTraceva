@@ -15,3 +15,4 @@ class Gossip:
         self.person_gossiped_about_id = person_gossiped_about_id
         self.juicy = juicy
         self.stoppable = stoppable
+        self.path_infected = {}

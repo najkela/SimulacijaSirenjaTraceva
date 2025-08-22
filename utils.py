@@ -41,7 +41,7 @@ def RunSingleSimulation(
 
     for person_id in initial_infected_ids:
         people_dict[person_id].state = 'Infected'
-        people_dict[person_id].known_gossips[gossip.id] = gossip.person_gossiped_about_id
+        people_dict[person_id].known_gossips[gossip.id] = [person.id]
 
     # Чување параметара ширења кроз време
     infected_count_over_time = [num_initial_infected]
@@ -66,14 +66,15 @@ def RunSingleSimulation(
         for person_id, current_person in people_dict.items():
             # Могуће ширење заразе ако је тренутна особа заражена
             if current_person.state == 'Infected':
+                current_path = current_person.known_gossips[gossip.id]
                 # Особе које могу бити заражене
                 neighbors = list(G.neighbors(person_id))
                 for neighbor_id in neighbors:
                     neighbor_person = people_dict[neighbor_id]
                     # Да ли ће се тренутна особа заразити
-                    if random.random() < ChanceForInfection_6(transmission_probability, neighbor_person, people_can_know_gossip, gossip):
+                    if random.random() < ChanceForInfection(transmission_probability, G, current_person, neighbor_person, people_can_know_gossip, gossip):
                         newly_infected_ids.append(neighbor_id)
-                        neighbor_person.known_gossips[gossip.id] = gossip.person_gossiped_about_id
+                        neighbor_person.known_gossips[gossip.id] = current_path + [neighbor_id]
 
                     # Број пута колико је особа чула трач се повећава сваки пут кад буде изложена информацији
                     neighbor_person.gossips_heard[gossip.id] = neighbor_person.gossips_heard.get(gossip.id, 0) + 1
@@ -191,7 +192,7 @@ def ChanceForInfection(transmission_probability : float, G : nx.Graph, current_p
     speed_of_spread_factor = current_person.speed_of_spread
 
     # Сегмент 6 - Вишеструки независни извори
-    number_of_times_heard_factor = neighbor_person.gossip_heard.get(gossip.id)
+    number_of_times_heard_factor = neighbor_person.gossips_heard.get(gossip.id, 0)
 
     # Константе утицаја на пренос трача
     c_transmission_probability, c_social_connection, c_juicy, c_speed_of_spread, c_number_of_times_heard = .4999, .1, .2, .2, .0001
@@ -209,3 +210,17 @@ def CalculateHubs(G : nx.Graph) -> None:
     with open('hubs.txt', '+w') as file:
         for node, degree in sorted_degree:
             file.write(f"{node},{degree}\n")
+
+def MakeInfectionPath(people_dict : dict[int : Person], gossip : Gossip):
+    current_location = gossip.path_infected
+    for person_id, person in people_dict.items():
+        if person.state == "Infected":
+            current_location = gossip.path_infected
+            path = person.known_gossips[gossip.id]
+            for location in path:
+                try:
+                    current_location = current_location[location]
+                except:
+                    current_location[location] = {}
+                    current_location = current_location[location]
+            
