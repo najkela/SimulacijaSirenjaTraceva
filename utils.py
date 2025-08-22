@@ -1,6 +1,6 @@
 import networkx as nx
 import random
-from classes import Gossip
+from classes import *
 
 # Прави граф на основу фајла који му се додели
 def MakeGraph(file_path : str, input_range : tuple[int, int] = None, output_range : tuple[int, int] = None) -> nx.Graph:
@@ -21,7 +21,7 @@ def RunSingleSimulation(
         people_dict : dict, 
         transmission_probability : float, 
         simulation_days : int,
-        gossip : Gossip = None):
+        gossip : Gossip = None) -> float:
     
     # Прављење трача ако није исти за сваку симулацију
     if gossip == None:
@@ -86,10 +86,10 @@ def RunSingleSimulation(
     
     return max_infected_count, infected_count_over_time
 
-def ChanceForInfection_0(transmission_probability, neighbor_person, people_can_know_gossip): 
+def ChanceForInfection_0(transmission_probability : float, neighbor_person : Person, people_can_know_gossip : list[Person]) -> float: 
     return transmission_probability if neighbor_person.id in people_can_know_gossip and neighbor_person.state == 'Susceptible' else 0
 
-def ChanceForInfection_1(transmission_probability, G, current_person, neighbor_person, people_can_know_gossip, gossip):
+def ChanceForInfection_1(transmission_probability : float, G : nx.Graph, current_person : Person, neighbor_person : Person, people_can_know_gossip : list[Person], gossip : Gossip) -> float:
     if not ChanceForInfection_0(transmission_probability, neighbor_person, people_can_know_gossip):
         return 0
     
@@ -104,7 +104,7 @@ def ChanceForInfection_1(transmission_probability, G, current_person, neighbor_p
 
     return c_transission * transmission_probability + c_weight * (weight - friendship)
 
-def ChanceForInfection_2(transmission_probability, neighbor_person, people_can_know_gossip, gossip):
+def ChanceForInfection_2(transmission_probability : float, neighbor_person : Person, people_can_know_gossip : list[Person], gossip : Gossip) -> float:
     if not ChanceForInfection_0(transmission_probability, neighbor_person, people_can_know_gossip):
         return 0
 
@@ -112,7 +112,7 @@ def ChanceForInfection_2(transmission_probability, neighbor_person, people_can_k
 
     return c_transission * transmission_probability + c_juicy * gossip.juicy
 
-def ChanceForInfection_3(transmission_probability, current_person, neighbor_person, people_can_know_gossip, gossip):
+def ChanceForInfection_3(transmission_probability : float, current_person : Person, neighbor_person : Person, people_can_know_gossip : list[Person], gossip : Gossip) -> float:
     if not ChanceForInfection_0(transmission_probability, neighbor_person, people_can_know_gossip):
         return 0
     
@@ -122,7 +122,7 @@ def ChanceForInfection_3(transmission_probability, current_person, neighbor_pers
 
     return ChanceForInfection_2(transmission_probability, neighbor_person, people_can_know_gossip, gossip)
 
-def ChanceForInfection_4(transmission_probability, G, current_person, neighbor_person, people_can_know_gossip, gossip):
+def ChanceForInfection_4(transmission_probability : float, G : nx.Graph, current_person : Person, neighbor_person : Person, people_can_know_gossip : list[Person], gossip : Gossip) -> float:
     if not ChanceForInfection_0(transmission_probability, neighbor_person, people_can_know_gossip):
         return 0
     
@@ -141,7 +141,7 @@ def ChanceForInfection_4(transmission_probability, G, current_person, neighbor_p
     
     return transmission_probability
 
-def ChanceForInfection_5(transmission_probability, current_person, neighbor_person, people_can_know_gossip):
+def ChanceForInfection_5(transmission_probability : float, current_person : Person, neighbor_person : Person, people_can_know_gossip : list[Person]) -> float:
     if not ChanceForInfection_0(transmission_probability, neighbor_person, people_can_know_gossip):
         return 0
     
@@ -149,7 +149,7 @@ def ChanceForInfection_5(transmission_probability, current_person, neighbor_pers
    
     return c_transission * transmission_probability + c_person_speed_of_spread * current_person.speed_of_spread
 
-def ChanceForInfection_6(transmission_probability, neighbor_person, people_can_know_gossip, gossip):
+def ChanceForInfection_6(transmission_probability : float, neighbor_person : Person, people_can_know_gossip : Person, gossip : Gossip) -> float:
     if not ChanceForInfection_0(transmission_probability, neighbor_person, people_can_know_gossip):
         return 0
     
@@ -157,7 +157,7 @@ def ChanceForInfection_6(transmission_probability, neighbor_person, people_can_k
    
     return c_transission * transmission_probability +  c_number_of_times_heard * neighbor_person.gossips_heard.get(gossip.id, 0)
 
-def ChanceForInfection(transmission_probability, G, current_person, neighbor_person, people_can_know_gossip, gossip):
+def ChanceForInfection(transmission_probability : float, G : nx.Graph, current_person : Person, neighbor_person : Person, people_can_know_gossip : list[Person], gossip : Gossip) -> float:
     # Сегмент 0 - Базни модел
     if not neighbor_person.id in people_can_know_gossip or neighbor_person.state != 'Susceptible': return 0
 
@@ -202,3 +202,10 @@ def ChanceForInfection(transmission_probability, G, current_person, neighbor_per
     total_chance += c_speed_of_spread * speed_of_spread_factor 
     total_chance += c_number_of_times_heard * number_of_times_heard_factor
     return total_chance
+
+def CalculateHubs(G : nx.Graph) -> None:
+    # Прављење фајла са хабовима
+    sorted_degree = sorted(G.degree(), key = lambda x: x[1], reverse = True)
+    with open('hubs.txt', '+w') as file:
+        for node, degree in sorted_degree:
+            file.write(f"{node},{degree}\n")
