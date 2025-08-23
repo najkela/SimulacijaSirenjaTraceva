@@ -10,7 +10,7 @@ def main():
     # Параметри за симулацију
     transmission_probability = 0.02
     simulation_days = 25
-    num_iterations = 50
+    num_iterations = 1
 
     file_path = "graphs/soc-sign-bitcoinotc.csv"
     G = MakeGraph(file_path, (-10, 10), (0, 1))
@@ -25,9 +25,16 @@ def main():
         people.append(Person(i, gossip_modifier_constant, gossip_stoppage_constant, speed_of_spread))
     people_dict = {person.id: person for person in people}
 
+    # Учитавање хабова
+    hubs = []
+    with open('hubs.txt', 'r') as file:
+        for line in file.readlines():
+            node, degree = map(int, line.split(','))
+            hubs.append((node, degree))
+
     # Прављење трача
     gossip_id_counter = 0
-    person_gossiped_about_id = random.choice(list(people_dict.keys()))
+    person_gossiped_about_id = hubs[4][0]
     gossip_juicy = random.random()
     gossip_stoppable = random.random()
     main_gossip = Gossip(gossip_id_counter, person_gossiped_about_id, gossip_juicy, gossip_stoppable)
@@ -91,6 +98,10 @@ def main():
     plt.ylabel('Просечан проценат могућих особа које знају трач')
     plt.grid(True)
     plt.show()
+
+    # Путања ширења трача
+    MakeInfectionPath(people_dict, main_gossip)
+    print(main_gossip.path_infected)
 
 if __name__ == '__main__':
     main()
