@@ -21,7 +21,8 @@ def RunSingleSimulation(
         people_dict : dict, 
         transmission_probability : float, 
         simulation_days : int,
-        gossip : Gossip = None) -> float:
+        gossip : Gossip = None, 
+        consts : list[float] = [.005, .005, .005, .3, .4999, .1, .2, .2, .0001]) -> float:
     
     # Прављење трача ако није исти за сваку симулацију
     if gossip == None:
@@ -33,6 +34,9 @@ def RunSingleSimulation(
     for person in people_dict.values():
         person.state = 'Susceptible'
         person.known_gossips = {}
+        person.gossips_stopped = []
+        person.gossips_heard = {}
+    gossip.path_infected = {}
 
     # Бирање и постављање почетно заражене особе
     acquaintances_of_gossip_target = list(G.neighbors(gossip.person_gossiped_about_id))
@@ -41,7 +45,7 @@ def RunSingleSimulation(
 
     for person_id in initial_infected_ids:
         people_dict[person_id].state = 'Infected'
-        people_dict[person_id].known_gossips[gossip.id] = [person.id]
+        people_dict[person_id].known_gossips[gossip.id] = (0, [person.id])
 
     # Чување параметара ширења кроз време
     infected_count_over_time = [num_initial_infected]
@@ -54,7 +58,7 @@ def RunSingleSimulation(
     max_infected_count = len(people_can_know_gossip)
 
     # Симулација
-    for day in range(simulation_days):
+    for day in range(1, simulation_days + 1):
         # Провера да ли постоји још неко ко може да сазна трач
         if infected_count_over_time[-1] == max_infected_count: 
             infected_count_over_time.append(max_infected_count)
@@ -66,15 +70,15 @@ def RunSingleSimulation(
         for person_id, current_person in people_dict.items():
             # Могуће ширење заразе ако је тренутна особа заражена
             if current_person.state == 'Infected':
-                current_path = current_person.known_gossips[gossip.id]
+                current_path = current_person.known_gossips[gossip.id][1]
                 # Особе које могу бити заражене
                 neighbors = list(G.neighbors(person_id))
                 for neighbor_id in neighbors:
                     neighbor_person = people_dict[neighbor_id]
                     # Да ли ће се тренутна особа заразити
-                    if random.random() < ChanceForInfection(transmission_probability, G, current_person, neighbor_person, people_can_know_gossip, gossip):
+                    if random.random() < ChanceForInfection(transmission_probability, G, current_person, neighbor_person, people_can_know_gossip, gossip, consts):
                         newly_infected_ids.append(neighbor_id)
-                        neighbor_person.known_gossips[gossip.id] = current_path + [neighbor_id]
+                        neighbor_person.known_gossips[gossip.id] = (day, current_path + [neighbor_id])
 
                     # Број пута колико је особа чула трач се повећава сваки пут кад буде изложена информацији
                     neighbor_person.gossips_heard[gossip.id] = neighbor_person.gossips_heard.get(gossip.id, 0) + 1
@@ -84,8 +88,9 @@ def RunSingleSimulation(
         
         current_infected_count = sum(1 for person in people_dict.values() if person.state == 'Infected')
         infected_count_over_time.append(current_infected_count)
+        MakeInfectionPath(people_dict, gossip)
     
-    return max_infected_count, infected_count_over_time
+    return max_infected_count, infected_count_over_time, gossip.path_infected.copy()
 
 def ChanceForInfection_0(transmission_probability : float, neighbor_person : Person, people_can_know_gossip : list[Person]) -> float: 
     return transmission_probability if neighbor_person.id in people_can_know_gossip and neighbor_person.state == 'Susceptible' else 0
@@ -158,7 +163,18 @@ def ChanceForInfection_6(transmission_probability : float, neighbor_person : Per
    
     return c_transission * transmission_probability +  c_number_of_times_heard * neighbor_person.gossips_heard.get(gossip.id, 0)
 
-def ChanceForInfection(transmission_probability : float, G : nx.Graph, current_person : Person, neighbor_person : Person, people_can_know_gossip : list[Person], gossip : Gossip) -> float:
+def ChanceForInfection(
+        transmission_probability : float, 
+        G : nx.Graph, 
+        current_person : Person, 
+        neighbor_person : Person, 
+        people_can_know_gossip : list[Person], 
+        gossip : Gossip, 
+        consts : list[float] = [.005, .005, .005, .3, .4999, .1, .2, .2, .0001]) -> float:
+
+    # Константе
+    c_gossip_stoppage, c_person_stoppage, c_friendship, c_juicy_change, c_transmission_probability, c_social_connection, c_juicy, c_speed_of_spread, c_number_of_times_heard = consts
+    
     # Сегмент 0 - Базни модел
     if not neighbor_person.id in people_can_know_gossip or neighbor_person.state != 'Susceptible': return 0
 
@@ -176,13 +192,11 @@ def ChanceForInfection(transmission_probability : float, G : nx.Graph, current_p
 
     # Сегмент 3 - Могућност модификације
     juicy_change = random.random() * current_person.gossip_modifier_constant
-    c_juicy_change = .3
     gossip.juicy = (1 - c_juicy_change) * gossip.juicy + c_juicy_change * juicy_change
 
     # Сегмент 4 - Свесна одлука о преносу
     if gossip.id in current_person.gossips_stopped: return 0
 
-    c_gossip_stoppage, c_person_stoppage, c_friendship = .005, .005, .005
     chance_for_stoppage = c_gossip_stoppage * gossip.stoppable + c_person_stoppage * current_person.gossip_stoppage_constant + c_friendship * friendship
     if random.random() < chance_for_stoppage:
         current_person.gossips_stopped.append(gossip.id)
@@ -193,9 +207,6 @@ def ChanceForInfection(transmission_probability : float, G : nx.Graph, current_p
 
     # Сегмент 6 - Вишеструки независни извори
     number_of_times_heard_factor = neighbor_person.gossips_heard.get(gossip.id, 0)
-
-    # Константе утицаја на пренос трача
-    c_transmission_probability, c_social_connection, c_juicy, c_speed_of_spread, c_number_of_times_heard = .4999, .1, .2, .2, .0001
 
     total_chance = c_transmission_probability * transmission_probability 
     total_chance += c_social_connection * social_connection_factor 
@@ -216,11 +227,12 @@ def MakeInfectionPath(people_dict : dict[int : Person], gossip : Gossip):
     for person_id, person in people_dict.items():
         if person.state == "Infected":
             current_location = gossip.path_infected
-            path = person.known_gossips[gossip.id]
+            day, path = person.known_gossips[gossip.id]
             for location in path:
                 try:
                     current_location = current_location[location]
                 except:
                     current_location[location] = {}
                     current_location = current_location[location]
-            
+            current_location['day'] = day
+
